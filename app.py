@@ -13,6 +13,7 @@ from nodes_ingest_retrieve import ingest_node, retrieve_node
 from nodes_map import map_node
 from nodes_validate import validate_node
 from nodes_report import report_node
+from build_retriever import build_collection
 
 load_dotenv()
 
@@ -144,6 +145,24 @@ if not os.environ.get("GROQ_API_KEY"):
         "then restart this app."
     )
     st.stop()
+
+
+@st.cache_resource
+def ensure_index_is_built():
+    """Builds the ChromaDB search index from knowledge_base/*.json the first
+    time this app instance starts, and caches it for the life of that
+    instance. This removes the old dependency on manually running
+    `python build_retriever.py` before deploying — chroma_store/ is git-
+    ignored on purpose (it's a rebuildable artifact, not source), which
+    means a deployed app with no auto-build step would silently search
+    against a stale or missing index. st.cache_resource ensures this only
+    runs once per running instance, not once per file upload."""
+    with st.spinner("First-time setup: building the ISO/DPDP search index..."):
+        build_collection()
+    return True
+
+
+ensure_index_is_built()
 
 # ---------------------------------------------------------------------------
 # Upload + run
