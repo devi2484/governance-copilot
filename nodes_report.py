@@ -9,32 +9,66 @@ the hard gate running before this step.
 """
 
 import os
+import json
 from groq import Groq
 
 MODEL_LARGE = "llama-3.3-70b-versatile"  # runs once per document — quality over speed
 
 SYSTEM_PROMPT = """You are a compliance analyst writing a gap-readiness
-report for a company policy document. You will be given a list of controls
-that were VERIFIED as satisfied (each with real quoted evidence), and the
-full list of controls that were checked but NOT found to be satisfied.
+report for a company policy document. You will be given:
+1. A list of controls VERIFIED as satisfied (each with real quoted evidence)
+2. Coverage statistics broken down by theme (e.g. "Organizational: 4 of 37 covered")
+3. A sample of specific controls that were NOT found to be covered
 
 Write a clear, structured report with three sections:
-1. Summary (2-3 sentences: overall coverage picture)
+1. Summary (2-3 sentences: overall coverage picture, referencing the
+   coverage percentages given to you)
 2. Covered controls (list each, with its evidence quote)
-3. Top gaps (the most important missing controls, with a one-line
-   explanation of why each matters)
+3. Top gaps (pick the most important-sounding controls from the "not
+   covered" sample and explain in one line each why they matter — do NOT
+   say you lack the information to identify gaps, you have been given a
+   real sample to work from)
 
 Be factual and specific. Do not invent any coverage beyond what's given to
-you. If very few controls were checked, say so honestly rather than
-overstating confidence."""
+you. If overall coverage is low, say so honestly rather than overstating
+confidence."""
 
 
-def report_node(state: dict, all_control_ids: list[str] | None = None) -> dict:
-    """LangGraph node: state must contain 'validated_mappings'. Adds 'report'.
+def load_knowledge_base_ids() -> dict:
+    """Loads the full 93 ISO + 15 DPDP entries so the report can measure
+    real coverage against the whole knowledge base, not just what happened
+    to be retrieved as a candidate for this particular document."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(here, "knowledge_base", "iso27001_controls.json")) as f:
+        iso = json.load(f)
+    with open(os.path.join(here, "knowledge_base", "dpdp_clauses.json")) as f:
+        dpdp = json.load(f)
 
-    all_control_ids (optional): the full knowledge-base ID list, so the
-    report can say "X was never even checked" vs "X was checked and failed" —
-    a v2 refinement. For v1, gaps are simply "everything not in validated_mappings"."""
+    entries = []
+    for c in iso["controls"]:
+        entries.append({"id": f"ISO-{c['control_id']}", "title": c["title"], "theme": c["theme"]})
+    for c in dpdp["clauses"]:
+        entries.append({"id": f"DPDP-{c['clause_id']}", "title": c["topic"], "theme": "DPDP"})
+    return entries
+
+
+def compute_coverage_stats(validated_mappings, all_entries):
+    covered_ids = {m.control_id for m in validated_mappings}
+
+    themes = {}
+    for e in all_entries:
+        themes.setdefault(e["theme"], {"total": 0, "covered": 0})
+        themes[e["theme"]]["total"] += 1
+        if e["id"] in covered_ids:
+            themes[e["theme"]]["covered"] += 1
+
+    uncovered = [e for e in all_entries if e["id"] not in covered_ids]
+
+    return themes, uncovered
+
+
+def report_node(state: dict) -> dict:
+    """LangGraph node: state must contain 'validated_mappings'. Adds 'report'."""
 
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
@@ -44,10 +78,28 @@ def report_node(state: dict, all_control_ids: list[str] | None = None) -> dict:
     validated = state.get("validated_mappings", [])
     rejected = state.get("rejected_mappings", [])
 
+    all_entries = load_knowledge_base_ids()
+    theme_stats, uncovered = compute_coverage_stats(validated, all_entries)
+
     covered_text = "\n".join(
         f"- {m.control_id} ({m.title}): \"{m.evidence_sentence}\" [confidence {m.confidence}]"
         for m in validated
     ) or "None."
+
+    theme_text = "\n".join(
+        f"- {theme}: {stats['covered']} of {stats['total']} covered"
+        for theme, stats in theme_stats.items()
+    )
+
+    # Sample up to 3 uncovered controls per theme, so the LLM has concrete
+    # material for the Top Gaps section instead of just a percentage.
+    sample_by_theme = {}
+    for e in uncovered:
+        sample_by_theme.setdefault(e["theme"], []).append(e)
+    uncovered_sample_text = "\n".join(
+        f"- {theme}: " + "; ".join(f"{e['id']} ({e['title']})" for e in items[:3])
+        for theme, items in sample_by_theme.items()
+    )
 
     rejected_note = (
         f"\n\nNote: {len(rejected)} additional claim(s) were made by the initial "
@@ -62,6 +114,12 @@ Total chunks analyzed: {len(state.get('chunks', []))}
 VERIFIED covered controls:
 {covered_text}
 {rejected_note}
+
+Coverage by theme (out of the full 93 ISO controls + 15 DPDP clauses):
+{theme_text}
+
+Sample of controls NOT found to be covered (use these for Top Gaps):
+{uncovered_sample_text}
 
 Write the gap report now."""
 
@@ -97,3 +155,4 @@ if __name__ == "__main__":
     print("\n" + "=" * 60)
     print(state["report"])
     print("=" * 60)
+
