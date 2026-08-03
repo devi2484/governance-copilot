@@ -29,6 +29,12 @@ Write a clear, structured report with three sections:
    say you lack the information to identify gaps, you have been given a
    real sample to work from)
 
+CRITICAL ACCURACY RULE: when you state any number in the Summary (e.g. "X
+of Y controls covered", "X of Y DPDP clauses"), you MUST copy that number
+character-for-character from the "Coverage by theme" data you are given
+below — never recompute, round, or restate it from memory. A wrong number
+here is a factual error even if every individual control listed is correct.
+
 Be factual and specific. Do not invent any coverage beyond what's given to
 you. If overall coverage is low, say so honestly rather than overstating
 confidence.
@@ -163,7 +169,10 @@ Write the gap report now."""
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_prompt},
         ],
-        temperature=0.3,  # a little more room than Map's temperature=0, since this is writing, not judging
+        temperature=0.1,  # lowered from 0.3 after observing the model occasionally
+                          # restating a given coverage number slightly wrong in
+                          # prose — still enough room for natural Top Gaps writing,
+                          # but less room to drift on the numbers themselves
     )
 
     report_text = response.choices[0].message.content.strip()
