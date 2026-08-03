@@ -16,8 +16,8 @@ from schemas import ControlMapping
 MODEL_SMALL = "llama-3.1-8b-instant"  # cheap, fast — runs once per chunk
 
 SYSTEM_PROMPT = """You are a compliance analyst. You will be given a short
-excerpt from a company policy document, and a list of candidate ISO 27001 or
-DPDP controls/clauses that might be relevant.
+excerpt from a company policy document, and a list of candidate controls
+(each with an exact ID like ISO-8.28 or DPDP-DPDP-6) that might be relevant.
 
 For EACH candidate, decide: does the excerpt actually satisfy this control?
 Be strict — only mark satisfied=true if the excerpt clearly and specifically
@@ -27,14 +27,20 @@ If satisfied=true, you MUST quote the exact sentence from the excerpt (word
 for word, no paraphrasing) that proves it in evidence_sentence.
 If satisfied=false, leave evidence_sentence as null.
 
-Respond with ONLY a JSON array, no other text, one object per candidate, each
-matching this shape:
-{"source": "...", "control_id": "...", "title": "...", "satisfied": true/false,
+Respond with ONLY a JSON array, no other text, one object per candidate,
+using EXACTLY this shape — copy the control_id exactly as given, do not
+invent your own source or title fields:
+{"control_id": "<exact id from the candidate list>", "satisfied": true/false,
  "evidence_sentence": "..." or null, "confidence": 0.0-1.0}
 """
 
 
 def map_chunk(client: Groq, chunk_text: str, candidates: list[dict], chunk_id: int) -> tuple[list[ControlMapping], list[str]]:
+    # Authoritative lookup — source/title come from OUR retrieval data, never
+    # from the model's own words, so a formatting slip in the model's reply
+    # (e.g. "ISO 27001" instead of "ISO27001") can no longer break parsing.
+    candidates_by_id = {c["id"]: c for c in candidates}
+
     candidate_list = "\n".join(
         f"- {c['id']} ({c['metadata'].get('title') or c['metadata'].get('topic')}): {c['text']}"
         for c in candidates
@@ -61,8 +67,7 @@ Return the JSON array now."""
 
     # Robust extraction: find the first '[' and the last ']' in the reply and
     # parse only what's between them. This tolerates the model adding a
-    # sentence before/after the JSON, or wrapping it in markdown fences —
-    # all of which broke the old strict parser silently.
+    # sentence before/after the JSON, or wrapping it in markdown fences.
     start = raw.find("[")
     end = raw.rfind("]")
 
@@ -84,11 +89,30 @@ Return the JSON array now."""
 
     mappings = []
     for item in parsed:
+        model_control_id = item.get("control_id", "")
+        candidate = candidates_by_id.get(model_control_id)
+
+        if candidate is None:
+            msg = (f"Chunk {chunk_id}: model returned control_id {model_control_id!r} "
+                   f"which doesn't match any real candidate — skipped (this catches "
+                   f"invented/hallucinated IDs, which is a good thing).")
+            print(f"[Map] WARNING: {msg}")
+            warnings.append(msg)
+            continue
+
         try:
-            item["chunk_id"] = chunk_id
-            mappings.append(ControlMapping(**item))
+            mapping = ControlMapping(
+                source=candidate["metadata"]["source"],
+                control_id=candidate["id"],
+                title=candidate["metadata"].get("title") or candidate["metadata"].get("topic"),
+                satisfied=item.get("satisfied", False),
+                evidence_sentence=item.get("evidence_sentence"),
+                confidence=item.get("confidence", 0.0),
+                chunk_id=chunk_id,
+            )
+            mappings.append(mapping)
         except Exception as e:
-            msg = f"Chunk {chunk_id}: skipped a malformed mapping ({e})"
+            msg = f"Chunk {chunk_id}: skipped a malformed mapping for {model_control_id} ({e})"
             print(f"[Map] WARNING: {msg}")
             warnings.append(msg)
 
