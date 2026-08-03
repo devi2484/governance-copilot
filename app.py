@@ -135,7 +135,7 @@ with st.sidebar:
     )
     st.markdown("### Knowledge base")
     st.caption("93 ISO/IEC 27001:2022 Annex A controls")
-    st.caption("15 DPDP Act 2023 key obligations")
+    st.caption("16 DPDP Act 2023 key obligations")
 
 if not os.environ.get("GROQ_API_KEY"):
     st.error(

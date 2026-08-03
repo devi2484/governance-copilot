@@ -15,7 +15,7 @@
     {
       "clause_id": "DPDP-6",
       "topic": "Consent",
-      "summary": "Consent must be free, specific, informed, unconditional and unambiguous, given through a clear affirmative action; it can be withdrawn as easily as it was given."
+      "summary": "Consent must be free, specific, informed, unconditional and unambiguous, given through a clear affirmative action such as an opt-in checkbox; it can be withdrawn at any time as easily as it was given."
     },
     {
       "clause_id": "DPDP-7",
@@ -25,7 +25,12 @@
     {
       "clause_id": "DPDP-8",
       "topic": "General obligations of Data Fiduciary",
-      "summary": "The entity deciding the purpose/means of processing must ensure data accuracy, put in place reasonable security safeguards, and report data breaches."
+      "summary": "The entity deciding the purpose/means of processing must ensure data accuracy and completeness, and put in place reasonable technical and organisational security safeguards to protect personal data."
+    },
+    {
+      "clause_id": "DPDP-8-BREACH",
+      "topic": "Personal data breach notification",
+      "summary": "In the event of a personal data breach, the Data Fiduciary must promptly notify the Data Protection Board of India and inform each affected Data Principal, describing what happened and what steps are being taken."
     },
     {
       "clause_id": "DPDP-9",
@@ -35,37 +40,37 @@
     {
       "clause_id": "DPDP-10",
       "topic": "Additional obligations of Significant Data Fiduciaries",
-      "summary": "Entities notified as 'Significant Data Fiduciaries' (based on data volume/sensitivity) face extra duties: a Data Protection Officer, independent data audits, and periodic data protection impact assessments."
+      "summary": "Entities notified as 'Significant Data Fiduciaries' (based on data volume/sensitivity) face extra duties: appointing a Data Protection Officer, independent data audits, and periodic data protection impact assessments."
     },
     {
       "clause_id": "DPDP-11",
       "topic": "Right to access information",
-      "summary": "A Data Principal (the individual) can request a summary of what personal data is being processed and for what purpose."
+      "summary": "A Data Principal (the individual) can request a summary of what personal data is being processed and for what purpose, including a copy of their data."
     },
     {
       "clause_id": "DPDP-12",
       "topic": "Right to correction and erasure",
-      "summary": "Individuals can request correction of inaccurate data and erasure of data no longer needed for its stated purpose."
+      "summary": "Individuals can request correction of inaccurate or incomplete data, and erasure of data that is no longer needed for its stated purpose."
     },
     {
       "clause_id": "DPDP-13",
       "topic": "Right to grievance redressal",
-      "summary": "Individuals can raise grievances with the Data Fiduciary, which must respond within a specified timeframe."
+      "summary": "Individuals can raise a complaint or grievance with the Data Fiduciary (typically via a designated grievance officer), which must respond within a specified timeframe."
     },
     {
       "clause_id": "DPDP-14",
       "topic": "Right to nominate",
-      "summary": "An individual can nominate another person to exercise their rights in the event of death or incapacity."
+      "summary": "An individual can nominate another person to exercise their data rights in the event of their death or incapacity."
     },
     {
       "clause_id": "DPDP-15",
       "topic": "Duties of Data Principal",
-      "summary": "Individuals also have duties, e.g. not to impersonate another person or suppress material information when providing data."
+      "summary": "Individuals also have duties, e.g. not to impersonate another person or suppress material information when providing data, and not to file false or frivolous grievances."
     },
     {
       "clause_id": "DPDP-16",
       "topic": "Cross-border data transfer",
-      "summary": "The government can restrict transfer of personal data to specific notified countries -- a 'blacklist' approach, unlike GDPR's adequacy-based allowlist."
+      "summary": "The government may restrict transferring personal data outside India to specific notified countries -- a 'blacklist' approach, unlike GDPR's adequacy-based allowlist. A company's policy on sending customer data to another country, or to an overseas service provider, falls under this clause."
     },
     {
       "clause_id": "DPDP-17",
