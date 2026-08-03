@@ -191,7 +191,6 @@ if uploaded_file is not None and run_clicked:
         st.write("**2 · Retrieve** — searching the ISO 27001 / DPDP knowledge base...")
         state = retrieve_node(state)
         st.write("Candidate matches found for each chunk.")
-
         st.write("**3 · Map** — asking the model to judge each candidate match...")
         state = map_node(state)
         claimed = sum(1 for m in state["mappings"] if m.satisfied)
@@ -239,6 +238,23 @@ if "result" in st.session_state:
             )
             for w in state["map_warnings"]:
                 st.code(w, language=None)
+
+    with st.expander("🔍 Debug: retrieval candidates per chunk (what the search actually found)"):
+        st.caption(
+            "This shows the raw candidate list from ChromaDB before the AI model "
+            "judges anything — useful for checking whether a control you expected "
+            "to see (e.g. a specific DPDP clause) was even offered as a candidate "
+            "for a given chunk. If it's missing here, the model never had the "
+            "chance to consider it. If it's present here but missing from the "
+            "final report, the model considered it and judged it not satisfied, "
+            "or the hard gate rejected the evidence — both are working as intended, "
+            "not a bug."
+        )
+        for r in state.get("retrieved", []):
+            st.markdown(f"**Chunk {r['chunk_id']}:** _{r['chunk_text'][:100]}..._")
+            for c in r["candidates"]:
+                label = c["metadata"].get("title") or c["metadata"].get("topic")
+                st.caption(f"  · {c['id']} — {label}")
 
     tab1, tab2, tab3 = st.tabs(["📄 Gap report", "✅ Verified evidence", "⚠️ Rejected claims"])
 
