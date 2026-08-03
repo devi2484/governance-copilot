@@ -57,13 +57,22 @@ def ingest_node(state: dict) -> dict:
     return {**state, "raw_text": raw_text, "chunks": chunks}
 
 
-def retrieve_node(state: dict, db_path: str = "chroma_store", top_k: int = 3) -> dict:
+def retrieve_node(state: dict, db_path: str = "chroma_store", top_k: int = 6) -> dict:
     """LangGraph node: state must contain 'chunks'. Adds 'retrieved'.
 
     Important: this must use the exact same embedding function build_retriever.py
     used when it created the collection — a semantic-model collection can't be
     queried with a TF-IDF vectorizer and vice versa. We import the same flag and
-    class from build_retriever.py so the two files can never drift out of sync."""
+    class from build_retriever.py so the two files can never drift out of sync.
+
+    top_k default raised from 3 -> 6. With only 3 candidates per chunk, a
+    control that's a strong-but-not-top-ranked semantic match (e.g. a precise
+    DPDP clause sitting just behind a more generic ISO control) never even
+    reaches the Map step, so the LLM has no chance to judge it. Widening the
+    net costs a bit more Map-step tokens per chunk, but Map still judges each
+    candidate independently and the hard-gate Validate step downstream throws
+    out anything unverifiable — so casting wider is low-risk, it mainly adds
+    recall, not noise that survives to the final report."""
     client = chromadb.PersistentClient(path=db_path)
 
     if USE_LOCAL_FALLBACK:
