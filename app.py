@@ -177,6 +177,12 @@ if uploaded_file is not None and run_clicked:
         state = map_node(state)
         claimed = sum(1 for m in state["mappings"] if m.satisfied)
         st.write(f"Model claimed {claimed} controls were satisfied.")
+        if state.get("map_warnings"):
+            st.warning(
+                f"{len(state['map_warnings'])} chunk(s) had a parsing issue during "
+                f"Map — see details below. This can cause a document to look like "
+                f"it has less coverage than it really does."
+            )
 
         st.write("**4 · Hard-gate validate** — checking every claim against the real text...")
         state = validate_node(state)
@@ -204,6 +210,17 @@ if "result" in st.session_state:
     m2.metric("Verified matches", len(state.get("validated_mappings", [])))
     m3.metric("Rejected claims", len(state.get("rejected_mappings", [])))
 
+    if state.get("map_warnings"):
+        with st.expander(f"🐛 Debug: {len(state['map_warnings'])} Map parsing warning(s)"):
+            st.caption(
+                "These chunks had an issue during the Map step (usually the model's "
+                "reply wasn't in the expected format) and were skipped — meaning "
+                "the report below may be missing coverage that's actually there. "
+                "If you see these often, share this list to debug the prompt further."
+            )
+            for w in state["map_warnings"]:
+                st.code(w, language=None)
+
     tab1, tab2, tab3 = st.tabs(["📄 Gap report", "✅ Verified evidence", "⚠️ Rejected claims"])
 
     with tab1:
@@ -214,7 +231,6 @@ if "result" in st.session_state:
             file_name="verity_gap_report.md",
             mime="text/markdown",
         )
-
     with tab2:
         if not state["validated_mappings"]:
             st.info("No controls were verified as covered in this document.")

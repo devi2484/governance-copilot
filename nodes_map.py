@@ -9,6 +9,7 @@ answer into the ControlMapping schema from schemas.py.
 
 import os
 import json
+import re
 from groq import Groq
 from schemas import ControlMapping
 
@@ -33,7 +34,7 @@ matching this shape:
 """
 
 
-def map_chunk(client: Groq, chunk_text: str, candidates: list[dict], chunk_id: int) -> list[ControlMapping]:
+def map_chunk(client: Groq, chunk_text: str, candidates: list[dict], chunk_id: int) -> tuple[list[ControlMapping], list[str]]:
     candidate_list = "\n".join(
         f"- {c['id']} ({c['metadata'].get('title') or c['metadata'].get('topic')}): {c['text']}"
         for c in candidates
@@ -56,15 +57,30 @@ Return the JSON array now."""
     )
 
     raw = response.choices[0].message.content.strip()
-    # The model sometimes wraps its JSON array in markdown code fences even
-    # when told not to — strip those defensively before parsing.
-    raw = raw.removeprefix("```json").removeprefix("```").removesuffix("```").strip()
+    warnings = []
+
+    # Robust extraction: find the first '[' and the last ']' in the reply and
+    # parse only what's between them. This tolerates the model adding a
+    # sentence before/after the JSON, or wrapping it in markdown fences —
+    # all of which broke the old strict parser silently.
+    start = raw.find("[")
+    end = raw.rfind("]")
+
+    if start == -1 or end == -1 or end < start:
+        msg = f"Chunk {chunk_id}: no JSON array found in the model's reply. Raw reply: {raw[:300]!r}"
+        print(f"[Map] WARNING: {msg}")
+        warnings.append(msg)
+        return [], warnings
+
+    json_str = raw[start:end + 1]
 
     try:
-        parsed = json.loads(raw)
-    except json.JSONDecodeError:
-        print(f"[Map] WARNING: chunk {chunk_id} returned unparseable JSON, skipping.")
-        return []
+        parsed = json.loads(json_str)
+    except json.JSONDecodeError as e:
+        msg = f"Chunk {chunk_id}: found JSON-shaped text but it didn't parse ({e}). Extracted: {json_str[:300]!r}"
+        print(f"[Map] WARNING: {msg}")
+        warnings.append(msg)
+        return [], warnings
 
     mappings = []
     for item in parsed:
@@ -72,13 +88,15 @@ Return the JSON array now."""
             item["chunk_id"] = chunk_id
             mappings.append(ControlMapping(**item))
         except Exception as e:
-            print(f"[Map] WARNING: skipped malformed mapping for chunk {chunk_id}: {e}")
+            msg = f"Chunk {chunk_id}: skipped a malformed mapping ({e})"
+            print(f"[Map] WARNING: {msg}")
+            warnings.append(msg)
 
-    return mappings
+    return mappings, warnings
 
 
 def map_node(state: dict) -> dict:
-    """LangGraph node: state must contain 'retrieved'. Adds 'mappings'."""
+    """LangGraph node: state must contain 'retrieved'. Adds 'mappings' and 'map_warnings'."""
     api_key = os.environ.get("GROQ_API_KEY")
     if not api_key:
         raise RuntimeError(
@@ -88,13 +106,19 @@ def map_node(state: dict) -> dict:
     client = Groq(api_key=api_key)
 
     all_mappings = []
+    all_warnings = []
     for r in state["retrieved"]:
-        mappings = map_chunk(client, r["chunk_text"], r["candidates"], r["chunk_id"])
+        mappings, warnings = map_chunk(client, r["chunk_text"], r["candidates"], r["chunk_id"])
         all_mappings.extend(mappings)
+        all_warnings.extend(warnings)
 
     print(f"[Map] LLM produced {len(all_mappings)} candidate mappings "
           f"({sum(1 for m in all_mappings if m.satisfied)} claimed satisfied).")
-    return {**state, "mappings": all_mappings}
+    if all_warnings:
+        print(f"[Map] NOTE: {len(all_warnings)} parsing warning(s) occurred — "
+              f"see 'map_warnings' in the result, or the WARNING lines above.")
+
+    return {**state, "mappings": all_mappings, "map_warnings": all_warnings}
 
 
 if __name__ == "__main__":
