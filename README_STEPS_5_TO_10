@@ -1,0 +1,121 @@
+# Governance Copilot — Steps 5 to 10 Run Guide
+
+Everything below assumes you've already done Steps 1-4 (you have) and that
+your terminal is open inside the `governance-copilot` folder.
+
+---
+
+## Step 5 — Build & test the agent pipeline
+
+### 5.1 Install the new dependencies
+```
+pip install langgraph groq python-dotenv pypdf
+```
+
+### 5.2 Get your free Groq API key (if you haven't already)
+1. Go to console.groq.com and sign up.
+2. Left sidebar → API Keys → Create API Key.
+3. Copy it — it's shown only once.
+
+### 5.3 Set up your .env file
+1. In the project folder, make a copy of `.env.example` and rename the copy to exactly `.env` (no ".example").
+2. Open `.env` in VS Code and replace `paste_your_key_here` with your real key.
+3. Save. **Never share this file or paste the key into chat with me** — it's your private credential.
+
+### 5.4 Test the pieces that DON'T need the API key yet
+```
+python3 nodes_ingest_retrieve.py
+```
+This should print `[Ingest]` and `[Retrieve]` lines with real results — same as the retrieval test you already ran, just now wrapped as proper pipeline nodes.
+
+```
+python3 nodes_validate.py
+```
+This runs a self-test with fake data and should end with:
+```
+Self-test PASSED — the hard gate correctly separated real evidence from invented evidence.
+```
+This is the single most important line in the entire project — it proves the tool cannot silently make up compliance claims.
+
+### 5.5 Test the pieces that DO need the API key
+```
+python3 nodes_map.py
+```
+This actually calls the AI model for the first time. Should print several `[control_id] title — SATISFIED / not satisfied` lines.
+
+```
+python3 nodes_report.py
+```
+Runs the whole chain and prints a full written gap report at the end.
+
+### 5.6 Run the whole pipeline as one unit
+```
+python3 agent.py
+```
+This is Step 5, complete — one command runs Ingest → Retrieve → Map → Validate → Report and prints the final report.
+
+**If anything errors here, stop and tell me the exact error before moving on — don't skip ahead if this step doesn't work cleanly.**
+
+---
+
+## Step 6 — Run the Streamlit UI
+
+```
+streamlit run app.py
+```
+
+This opens a browser tab automatically. Upload a `.pdf` or `.txt` policy document, click "Run analysis," and watch the 5 stages run live with their own status messages, ending in the report and an expandable list of evidence-cited matches.
+
+Try uploading the `sample_policy.txt` file that was auto-created in your folder when you ran `nodes_ingest_retrieve.py` earlier — it's a ready-made test document.
+
+---
+
+## Step 7 — (folded into Step 6 above)
+Schema enforcement is already built into `schemas.py` and wired through every node — nothing extra to run here.
+
+---
+
+## Step 8 — Adversarial testing
+
+```
+python3 test_adversarial.py
+```
+
+This runs two tests automatically:
+1. An unrelated "summer sale" document — should find **zero** real coverage.
+2. A strong access-control policy — should find **real, evidence-backed** coverage.
+
+Read the PASS / REVIEW NEEDED lines it prints. If a test says "REVIEW NEEDED," it's not necessarily broken — read the actual evidence quotes it printed and judge for yourself whether they're honest matches or not. This script flags things for you to look at, it doesn't replace your own judgment.
+
+---
+
+## Step 9 — Deploy for free
+
+1. Create a free GitHub account if you don't have one (github.com).
+2. Create a new repository, e.g. `governance-copilot`.
+3. Push your project folder to it (VS Code has a built-in "Source Control" tab that can do this with a few clicks — ask me for the click-by-click if you want it).
+4. **Double-check `.env` is NOT in what you're pushing** — the `.gitignore` file already excludes it, but visually confirm on GitHub after pushing that your real API key isn't visible anywhere in the repo.
+5. Go to streamlit.io/cloud, sign in with GitHub, click "New app," point it at your repo and `app.py`.
+6. In the app's settings on Streamlit Cloud, add a "Secret" named `GROQ_API_KEY` with your real key — this is the cloud equivalent of your local `.env` file.
+7. Deploy. You'll get a public URL you can put on your resume/LinkedIn.
+
+---
+
+## Step 10 — Package the story
+
+Use this exact language (already fact-checked against what you actually built):
+
+> "Built an agentic governance-mapping tool (LangGraph, Groq, ChromaDB) that
+> retrieves relevant ISO 27001 / DPDP clauses via semantic search, maps them
+> against uploaded policy documents through a schema-enforced LLM call, and
+> hard-gates every compliance claim against the real source text before
+> including it in the final report — verified via adversarial testing
+> against both false-positive and true-positive documents."
+
+If asked to explain it in an interview, use this 20-second version:
+"It's a tool that reads a company policy document and tells you which ISO 27001 or DPDP rules it actually covers — but the key design decision is that every claim has to be backed by a real quoted sentence, checked in code, not just trusted from the AI. I built that after seeing how easy it is for an AI to sound confident about something that isn't actually true."
+
+---
+
+## If something breaks at any point
+Come back and tell me exactly which command you ran and paste the error text — same as we did for Steps 1-4. We'll fix it one piece at a time rather than guessing.

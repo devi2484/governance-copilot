@@ -1,0 +1,7 @@
+Access Control Policy
+
+All employee laptops must be encrypted using full-disk encryption and must automatically lock after 10 minutes of inactivity. This applies to all company-owned devices.
+
+We conduct background verification checks on all new hires before their start date, in line with role sensitivity. Verification records are retained by HR for the duration of employment.
+
+Users may submit a request to access a copy of the personal data we hold about them at any time, and we will respond within 30 days.

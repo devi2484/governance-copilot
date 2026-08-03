@@ -1,0 +1,8 @@
+chromadb
+pydantic
+langgraph
+groq
+python-dotenv
+pypdf
+streamlit
+scikit-learn
