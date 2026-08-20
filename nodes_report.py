@@ -12,7 +12,7 @@ import os
 import json
 from groq import Groq
 
-MODEL_LARGE = "llama-3.3-70b-versatile"  # runs once per document — quality over speed
+MODEL_LARGE = "openai/gpt-oss-120b"  # runs once per document — quality over speed (replaces deprecated llama-3.3-70b-versatile)
 
 SYSTEM_PROMPT = """You are a compliance analyst writing a gap-readiness
 report for a company policy document. You will be given:

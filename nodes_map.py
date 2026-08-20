@@ -13,7 +13,7 @@ import re
 from groq import Groq
 from schemas import ControlMapping
 
-MODEL_SMALL = "llama-3.1-8b-instant"  # cheap, fast — runs once per chunk
+MODEL_SMALL = "openai/gpt-oss-20b"  # cheap, fast — runs once per chunk (replaces deprecated llama-3.1-8b-instant)
 
 SYSTEM_PROMPT = """You are a compliance analyst. You will be given a short
 excerpt from a company policy document, and a list of candidate controls
