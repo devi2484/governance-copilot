@@ -25,116 +25,77 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------------------------
-# Styling — a quiet case-file register: paper, ink, and a stamp. No gradients,
-# no glow, nothing trying to look like a product screenshot. The tool checks
-# claims against evidence, so the page borrows the visual grammar of a
-# document under review, not a SaaS dashboard.
+# Styling — plain and quiet. System fonts, one accent color, no decoration.
 # ---------------------------------------------------------------------------
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
-
 :root {
-    --paper: #FAF7F1;
-    --paper-dim: #F2EDE2;
-    --ink: #26221A;
-    --ink-soft: #756C5C;
-    --rule: #DBD3C1;
-    --verified: #3E5C46;
-    --verified-bg: #EEF1E9;
-    --rejected: #9C4A38;
-    --rejected-bg: #F5EBE5;
-    --stamp: #9C4A38;
+    --ink: #1a1a1a;
+    --ink-soft: #6e6e6e;
+    --rule: #e3e3e3;
+    --verified: #2e6b3e;
+    --rejected: #a13f2b;
 }
 
-.stApp { background-color: var(--paper); }
-[data-testid="stSidebar"] { background-color: var(--paper-dim); border-right: 1px solid var(--rule); }
-[data-testid="stSidebar"] * { color: var(--ink) !important; }
-
-h1, h2, h3 { font-family: 'Newsreader', serif; color: var(--ink); font-weight: 500; }
-p, div, span, label, li { font-family: 'Inter', sans-serif; color: var(--ink); }
-.stApp, .stMarkdown, .stText { color: var(--ink); }
+.stApp { background-color: #ffffff; }
+h1, h2, h3 { font-weight: 600; color: var(--ink); }
+p, div, span, label, li { color: var(--ink); }
 
 .verity-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    padding: 4px 0 22px;
+    padding: 0 0 18px;
     border-bottom: 1px solid var(--rule);
-    margin-bottom: 26px;
+    margin-bottom: 22px;
 }
 .verity-tag {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 1.5px;
+    font-size: 12px;
+    letter-spacing: 0.3px;
     color: var(--ink-soft);
-    text-transform: uppercase;
+    margin-bottom: 6px;
 }
 .verity-title {
-    font-family: 'Newsreader', serif;
-    font-style: italic;
-    font-size: 40px;
-    font-weight: 500;
-    margin: 2px 0 8px;
+    font-size: 26px;
+    font-weight: 600;
+    margin: 0 0 6px;
     color: var(--ink);
 }
 .verity-sub {
     color: var(--ink-soft);
-    font-size: 14.5px;
-    line-height: 1.6;
-    max-width: 560px;
-}
-.verity-stamp {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 1px;
-    color: var(--stamp);
-    border: 1.5px solid var(--stamp);
-    border-radius: 3px;
-    padding: 7px 12px;
-    transform: rotate(-4deg);
-    white-space: nowrap;
-    margin-top: 6px;
+    font-size: 14px;
+    line-height: 1.55;
+    max-width: 540px;
 }
 
 .result-card {
-    background: transparent;
     border-bottom: 1px solid var(--rule);
-    padding: 14px 2px 16px;
+    padding: 12px 0 14px;
 }
 .result-card .cid {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 12px;
     color: var(--verified);
-    letter-spacing: 0.5px;
 }
 .result-card .quote {
-    color: var(--ink);
-    font-style: italic;
-    font-family: 'Newsreader', serif;
-    font-size: 15px;
-    margin-top: 6px;
-    padding-left: 12px;
-    border-left: 2px solid var(--verified);
+    color: var(--ink-soft);
+    font-size: 14px;
+    margin-top: 5px;
+    padding-left: 10px;
+    border-left: 2px solid var(--rule);
 }
 .rejected-card {
-    background: transparent;
     border-bottom: 1px solid var(--rule);
-    padding: 14px 2px 16px;
-    opacity: 0.9;
+    padding: 12px 0 14px;
 }
 .rejected-card .cid {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    font-size: 12px;
     color: var(--rejected);
-    letter-spacing: 0.5px;
 }
 .rejected-card .quote {
     color: var(--ink-soft);
-    font-size: 13.5px;
-    margin-top: 6px;
-    padding-left: 12px;
-    border-left: 2px solid var(--rejected);
+    font-size: 13px;
+    margin-top: 5px;
+    padding-left: 10px;
+    border-left: 2px solid var(--rule);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -144,16 +105,13 @@ p, div, span, label, li { font-family: 'Inter', sans-serif; color: var(--ink); }
 # ---------------------------------------------------------------------------
 st.markdown("""
 <div class="verity-header">
-    <div>
-        <div class="verity-tag">Evidence-gated compliance mapping</div>
-        <div class="verity-title">Verity</div>
-        <div class="verity-sub">
-            Upload a policy document to see which ISO 27001 and DPDP Act
-            controls it actually covers — every claim backed by a real quoted
-            sentence, checked in code, not just trusted from the model.
-        </div>
+    <div class="verity-tag">Evidence-gated compliance mapping</div>
+    <div class="verity-title">Verity</div>
+    <div class="verity-sub">
+        Upload a policy document to see which ISO 27001 and DPDP Act
+        controls it actually covers — every claim backed by a real quoted
+        sentence, checked in code, not just trusted from the model.
     </div>
-    <div class="verity-stamp">HARD-GATE<br/>VALIDATED</div>
 </div>
 """, unsafe_allow_html=True)
 
