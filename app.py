@@ -25,73 +25,116 @@ st.set_page_config(
 )
 
 # ---------------------------------------------------------------------------
-# Styling — dark charcoal + amber accent, matching a consistent visual
-# identity across this whole placement-prep project.
+# Styling — a quiet case-file register: paper, ink, and a stamp. No gradients,
+# no glow, nothing trying to look like a product screenshot. The tool checks
+# claims against evidence, so the page borrows the visual grammar of a
+# document under review, not a SaaS dashboard.
 # ---------------------------------------------------------------------------
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
 :root {
-    --accent: #e8d94a;
-    --accent-dim: #b8ab2f;
+    --paper: #FAF7F1;
+    --paper-dim: #F2EDE2;
+    --ink: #26221A;
+    --ink-soft: #756C5C;
+    --rule: #DBD3C1;
+    --verified: #3E5C46;
+    --verified-bg: #EEF1E9;
+    --rejected: #9C4A38;
+    --rejected-bg: #F5EBE5;
+    --stamp: #9C4A38;
 }
-.stApp { background-color: #17181a; }
-h1, h2, h3 { font-family: 'Georgia', serif; }
+
+.stApp { background-color: var(--paper); }
+[data-testid="stSidebar"] { background-color: var(--paper-dim); border-right: 1px solid var(--rule); }
+[data-testid="stSidebar"] * { color: var(--ink) !important; }
+
+h1, h2, h3 { font-family: 'Newsreader', serif; color: var(--ink); font-weight: 500; }
+p, div, span, label, li { font-family: 'Inter', sans-serif; color: var(--ink); }
+.stApp, .stMarkdown, .stText { color: var(--ink); }
+
 .verity-header {
-    padding: 8px 0 20px;
-    border-bottom: 1px solid #38393d;
-    margin-bottom: 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: 4px 0 22px;
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: 26px;
 }
 .verity-tag {
-    font-family: monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
-    letter-spacing: 2px;
-    color: var(--accent);
+    letter-spacing: 1.5px;
+    color: var(--ink-soft);
     text-transform: uppercase;
 }
+.verity-title {
+    font-family: 'Newsreader', serif;
+    font-style: italic;
+    font-size: 40px;
+    font-weight: 500;
+    margin: 2px 0 8px;
+    color: var(--ink);
+}
 .verity-sub {
-    color: #a9a9a2;
-    font-size: 14px;
-    margin-top: 4px;
+    color: var(--ink-soft);
+    font-size: 14.5px;
+    line-height: 1.6;
+    max-width: 560px;
 }
-.badge {
-    display: inline-block;
-    font-family: monospace;
-    font-size: 10.5px;
-    padding: 3px 10px;
-    border: 1px solid #38393d;
-    border-radius: 20px;
-    color: #a9a9a2;
-    margin-right: 6px;
+.verity-stamp {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    color: var(--stamp);
+    border: 1.5px solid var(--stamp);
+    border-radius: 3px;
+    padding: 7px 12px;
+    transform: rotate(-4deg);
+    white-space: nowrap;
+    margin-top: 6px;
 }
+
 .result-card {
-    background: #232427;
-    border: 1px solid #38393d;
-    border-left: 3px solid var(--accent);
-    border-radius: 8px;
-    padding: 14px 18px;
-    margin-bottom: 10px;
+    background: transparent;
+    border-bottom: 1px solid var(--rule);
+    padding: 14px 2px 16px;
 }
 .result-card .cid {
-    font-family: monospace;
+    font-family: 'IBM Plex Mono', monospace;
     font-size: 11px;
-    color: var(--accent);
-    letter-spacing: 1px;
+    color: var(--verified);
+    letter-spacing: 0.5px;
 }
 .result-card .quote {
-    color: #c8c7be;
+    color: var(--ink);
     font-style: italic;
+    font-family: 'Newsreader', serif;
+    font-size: 15px;
     margin-top: 6px;
-    border-left: 2px solid #38393d;
-    padding-left: 10px;
+    padding-left: 12px;
+    border-left: 2px solid var(--verified);
 }
 .rejected-card {
-    background: #232427;
-    border: 1px solid #38393d;
-    border-left: 3px solid #77776f;
-    border-radius: 8px;
-    padding: 14px 18px;
-    margin-bottom: 10px;
-    opacity: 0.85;
+    background: transparent;
+    border-bottom: 1px solid var(--rule);
+    padding: 14px 2px 16px;
+    opacity: 0.9;
+}
+.rejected-card .cid {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--rejected);
+    letter-spacing: 0.5px;
+}
+.rejected-card .quote {
+    color: var(--ink-soft);
+    font-size: 13.5px;
+    margin-top: 6px;
+    padding-left: 12px;
+    border-left: 2px solid var(--rejected);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -101,19 +144,16 @@ h1, h2, h3 { font-family: 'Georgia', serif; }
 # ---------------------------------------------------------------------------
 st.markdown("""
 <div class="verity-header">
-    <div class="verity-tag">Evidence-gated compliance mapping</div>
-    <h1 style="margin:4px 0 0;">🔎 Verity</h1>
-    <div class="verity-sub">
-        Upload a company policy document to see which ISO 27001 and DPDP Act
-        controls it actually covers — every claim backed by a real quoted
-        sentence, checked in code, not just trusted from the model.
+    <div>
+        <div class="verity-tag">Evidence-gated compliance mapping</div>
+        <div class="verity-title">Verity</div>
+        <div class="verity-sub">
+            Upload a policy document to see which ISO 27001 and DPDP Act
+            controls it actually covers — every claim backed by a real quoted
+            sentence, checked in code, not just trusted from the model.
+        </div>
     </div>
-    <div style="margin-top:12px;">
-        <span class="badge">LangGraph</span>
-        <span class="badge">Groq</span>
-        <span class="badge">ChromaDB</span>
-        <span class="badge">Hard-gate validated</span>
-    </div>
+    <div class="verity-stamp">HARD-GATE<br/>VALIDATED</div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -229,7 +269,7 @@ if "result" in st.session_state:
     m3.metric("Rejected claims", len(state.get("rejected_mappings", [])))
 
     if state.get("map_warnings"):
-        with st.expander(f"🐛 Debug: {len(state['map_warnings'])} Map parsing warning(s)"):
+        with st.expander(f"Debug — {len(state['map_warnings'])} Map parsing warning(s)"):
             st.caption(
                 "These chunks had an issue during the Map step (usually the model's "
                 "reply wasn't in the expected format) and were skipped — meaning "
@@ -239,7 +279,7 @@ if "result" in st.session_state:
             for w in state["map_warnings"]:
                 st.code(w, language=None)
 
-    with st.expander("🔍 Debug: retrieval candidates per chunk (what the search actually found)"):
+    with st.expander("Debug — retrieval candidates per chunk (what the search actually found)"):
         st.caption(
             "This shows the raw candidate list from ChromaDB before the AI model "
             "judges anything — useful for checking whether a control you expected "
@@ -256,7 +296,7 @@ if "result" in st.session_state:
                 label = c["metadata"].get("title") or c["metadata"].get("topic")
                 st.caption(f"  · {c['id']} — {label}")
 
-    tab1, tab2, tab3 = st.tabs(["📄 Gap report", "✅ Verified evidence", "⚠️ Rejected claims"])
+    tab1, tab2, tab3 = st.tabs(["Gap report", "Verified evidence", "Rejected claims"])
 
     with tab1:
         st.markdown(state["report"])
